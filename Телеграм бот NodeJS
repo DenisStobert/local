@@ -1,0 +1,1356 @@
+const express = require('express');
+const dotenv = require('dotenv');
+dotenv.config();
+process.env.NTBA_FIX_319 = 1;
+const TelegramBot = require('node-telegram-bot-api');
+const axios = require('axios');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const connectDB = require('./mongodb/connect.js');
+const Balance = require('./mongodb/models/balanceAccount.js');
+const Counter = require('./mongodb/models/renderCounter.js');
+ 
+ 
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const server_url = "https://aisitegen.onrender.com";
+const bot_server_url = "https://telegrambotwhitepagegen.onrender.com";
+
+ 
+const token = process.env.TELEGRAM_API_TOKEN;
+const url = process.env.APP_URL || 'https://telegrambotwhitepagegen.onrender.com';
+
+const apiKey = process.env.CRYPTOCLOUD_API_KEY; // Получаем API ключ
+
+
+
+const bot = new TelegramBot(token, { webHook: true });
+
+//const cryptomus_api_key = 'a1f4e96fd62885e88eebef38ca772b05e758688e' // process.env.CRYPTOMUS_API_KEY;
+//const cryptomus_merchant_id = '1836857f-ec32-445f-b655-19bc97008436' // process.env.CRYPTOMUS_MERCHANT_ID;
+
+// PAY 
+
+
+const baseUrl = "https://api.cryptocloud.plus/v2/";
+
+
+const SECRET_KEY = process.env.SECRET_KEY //'0EJxdARiyjOH9cnHCADYr9e1c6kn4yfTR3Ha';
+
+
+// END PAY
+
+
+
+
+//a1f4e96fd62885e88eebef38ca772b05e758688e
+// 1836857f-ec32-445f-b655-19bc97008436
+
+bot.setWebHook(`${url}/${token}`);
+
+bot.setMyCommands([{ command: 'menu', description: 'Главное меню' }]);
+
+app.post(`/${token}`, (req, res) => {
+    bot.processUpdate(req.body);
+    console.log("Получены данные вебхука:", req.body);
+    res.sendStatus(200);
+});
+
+
+// Обработка успешной оплаты
+app.get('/api/v1/payment/successful-payment', (req, res) => {
+    res.send('Оплата успешно завершена.');
+});
+
+// Обработка неуспешной оплаты
+app.get('/api/v1/payment/failed-payment', (req, res) => {
+    res.send('Оплата не была завершена.');
+});
+
+// Обработка уведомлений от CryptoCloud
+app.post('/api/v1/payment', (req, res) => {
+    const { order_id, status } = req.body;
+
+    if (status === 'paid') {
+        bot.sendMessage(order_id, '✅ Ваш платеж успешно получен. Начинаем генерацию сайта.');
+        startSiteGeneration(order_id); // Запуск процесса генерации сайта
+    } else {
+        bot.sendMessage(order_id, '❌ Платеж не прошел. Пожалуйста, попробуйте снова.');
+    }
+
+    res.sendStatus(200);
+});
+
+// Доступные опции
+const options = {
+    site_theme: [
+        '🏢 Бизнес', '💄 Здоровье и красота', '💹 Инвестиции', '🎉 Развлечения',
+        '💻 Технологии', '🔮 Астрология', '🎓 Образование', '🏥 Здравоохранение',
+        '👗 Мода', '🚗 Автомобили', '✈️ Путешествия', '🍳 Кулинария', '🏅 Спорт',
+        '💵 Финансы', '🩺 Медицина',
+        '🏠 Недвижимость', '🏗️ Строительство', '🏛️ Архитектура', '🎨 Дизайн',
+        '📸 Фотография', '📈 Маркетинг', '📢 Реклама', '📣 PR', '🗂️ Менеджмент',
+        '🏖️ Образ жизни', '🎨 Хобби', '🔧 Ремонт', '🏠 Интерьер', '🖼️ Искусство',
+        '📚 Литература', '🎵 Музыка', '🎬 Фильмы', '🎭 Театр', '🌸 Флористика',
+        '🌿 Садоводство', '🐾 Животные', '🐕 Домашние питомцы', '🏹 Охота',
+        '🎣 Рыбалка', '🚵 Активный отдых', '📱 Электроника', '💻 IT', '🌐 Социальные сети',
+        '✍️ Блоги', '💬 Форумы', '🛒 Электронная коммерция', '🏨 Отель',  '🎲 Казино', '💰 Крипто'
+    ],
+    site_language: [
+        '🇬🇧 Английский', '🇪🇸 Испанский', '🇫🇷 Французский', '🇩🇪 Немецкий',
+        '🇮🇹 Итальянский', '🇵🇹 Португальский', '🇳🇱 Нидерландский', '🇷🇺 Русский',
+        '🇯🇵 Японский', '🇰🇷 Корейский', '🇸🇦 Арабский', '🇧🇩 Бенгальский',
+        '🇮🇳 Хинди', '🇮🇩 Индонезийский', '🇲🇾 Малайский', '🇹🇷 Турецкий',
+        '🇻🇳 Вьетнамский', '🇹🇭 Тайский', '🇵🇭 Филиппинский', '🇮🇱 Иврит',
+        '🇵🇱 Польский', '🇺🇦 Украинский', '🇨🇿 Чешский', '🇸🇪 Шведский',
+        '🇳🇴 Норвежский', '🇩🇰 Датский', '🇫🇮 Финский', '🇬🇷 Греческий',
+        '🇭🇺 Венгерский', '🇷🇴 Румынский', '🇸🇰 Словацкий', '🇱🇹 Литовский',
+        '🇱🇻 Латвийский', '🇪🇪 Эстонский', '🇷🇸 Сербский', '🇭🇷 Хорватский',
+        '🇧🇬 Болгарский', '🇮🇸 Исландский', '🇲🇰 Македонский', '🇸🇮 Словенский',
+        '🇲🇹 Мальтийский', '🇬🇪 Грузинский', '🇦🇲 Армянский', '🇦🇿 Азербайджанский',
+        '🇦🇱 Албанский', '🇺🇿 Узбекский', '🇧🇾 Белорусский', '🇰🇿 Казахский'
+    ],
+    contact_country: [
+        '🇺🇸 США', '🇨🇦 Канада', '🇬🇧 Великобритания', '🇳🇿 Новая Зеландия',
+        '🇦🇺 Австралия', '🇮🇪 Ирландия', '🇮🇱 Израиль', '🇪🇸 Испания',
+        '🇰🇿 Казахстан', '🇫🇷 Франция', '🇩🇪 Германия', '🇮🇹 Италия',
+        '🇳🇱 Нидерланды', '🇧🇪 Бельгия', '🇨🇭 Швейцария', '🇸🇪 Швеция',
+        '🇳🇴 Норвегия', '🇩🇰 Дания', '🇫🇮 Финляндия', '🇦🇹 Австрия',
+        '🇬🇷 Греция', '🇵🇹 Португалия', '🇵🇱 Польша', '🇨🇿 Чехия',
+        '🇸🇰 Словакия', '🇭🇺 Венгрия', '🇭🇷 Хорватия', '🇷🇸 Сербия',
+        '🇧🇬 Болгария', '🇷🇴 Румыния', '🇱🇹 Литва', '🇱🇻 Латвия',
+        '🇪🇪 Эстония', '🇮🇸 Исландия', '🇱🇺 Люксембург', '🇲🇨 Монако',
+        '🇦🇩 Андорра', '🇸🇲 Сан-Марино', '🇱🇮 Лихтенштейн', '🇲🇹 Мальта',
+        '🇨🇾 Кипр', '🇬🇪 Грузия', '🇦🇲 Армения', '🇦🇿 Азербайджан',
+        '🇹🇷 Турция', '🇷🇺 Россия', '🇧🇾 Беларусь', '🇺🇦 Украина',
+        '🇲🇩 Молдавия', '🇺🇿 Узбекистан'
+    ],
+    site_count: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+    sub_categories: {
+        '🎲 Казино': [
+            'Ремонт Казино и Отелей',
+            'IT для казино',
+            'Бизнес консультации казино',
+            'Отели казино'
+        ],
+        '💰 Крипто': [
+            'Консалтинг в крипто',
+            'ПO для крипто',
+            'Услуги программистов в крипто',
+            'Юридическая помощь для крипто',
+            'Продвижение криптопроектов',
+            'Налогообложение крипто',
+            'Помощь в запуске крипто'
+        ]
+    },
+    'file_extension': ['PHP', 'HTML']
+};
+
+// Сопоставление коротких ключей и полных значений
+const shortToFullMap = {
+    '🎲 Казино': '🎲 Казино',
+    'st_sc:0': 'Ремонт Казино и Отелей',
+    'st_sc:1': 'IT услуги для казино',
+    'st_sc:2': 'Бизнес консультации для казино',
+    'st_sc:3': 'Отели казино',
+    '💰 Крипто': '💰 Крипто',
+    'st_sc:4': 'Консалтинг в мире криптовалюты',
+    'st_sc:5': 'Програмное обеспечение для крипто-бирж и криптовалютных проектов',
+    'st_sc:6': 'Услуги программистов для крипто-проектов',
+    'st_sc:7': 'Юридическая помощь в мире криптовалюты',
+    'st_sc:8': 'Продвижение криптопроектов',
+    'st_sc:9': 'Помощь с налогообложением криптовалюты',
+    'st_sc:10': 'Помощь в запуске криптопроектов'
+};
+
+const formState = {};
+
+const sendMainMenuOld = (chatId) => {
+    console.log(`Отправка главного меню в чат: ${chatId}`);
+    bot.sendMessage(chatId, 'Добро пожаловать в бот генерации сайтов! Выберите опцию:', {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Начать', callback_data: 'generate_site' }],
+            ],
+        },
+    });
+};
+
+
+const sendMainMenu = (chatId) => {
+    console.log(`Отправка главного меню в чат: ${chatId}`);
+    bot.sendMessage(chatId, 'Добро пожаловать в нашего бота!', {
+        reply_markup: {
+            keyboard: [
+                [{ text: '🚀 Старт' }]
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true
+        }
+    });
+};
+ 
+
+const sendBottomMenu = (chatId) => {
+
+     
+
+    bot.sendMessage(chatId, 'Выберите опцию:', {
+        reply_markup: {
+            keyboard: [
+                [    
+                    { text: '🤖 Генератор', callback_data: 'generate_site' },
+                    { text: '💸 Пополнить Счет', callback_data: 'buy_tokens' }
+                ],
+                [
+                    { text: '🧑‍💻 Профиль', callback_data: 'user_profile' },
+                    { text: '💡 Поддержка', callback_data: 'user_support' }
+                ],
+                [
+                    { text: '💵 Применить Купон', callback_data: 'apply_coupon' } 
+                ]
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true
+        }
+    });
+    const new_chatId = chatId;
+};
+
+
+
+const sendLanguageSelectionMenu = (chatId) => {
+    bot.sendMessage(chatId, 'Пожалуйста, выберите язык / Please select a language:', {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: 'Русский', callback_data: 'language:ru' },
+                    { text: 'English', callback_data: 'language:en' }
+                ]
+            ]
+        }
+    });
+};
+
+
+
+const sendOptionsTwoColumnsOld = (chatId, key, optionsArray) => {
+    console.log(`Отправка опций для ${key} в чат: ${chatId}`);
+
+    const inline_keyboard = [];
+    for (let i = 0; i < optionsArray.length; i += 2) {
+        inline_keyboard.push([
+            { text: optionsArray[i], callback_data: `${key}:${optionsArray[i]}` },
+            optionsArray[i + 1] ? { text: optionsArray[i + 1], callback_data: `${key}:${optionsArray[i + 1]}` } : null
+        ].filter(Boolean));
+    }
+
+    const message = `Выберите ${key === 'site_theme' ? 'Тему Сайта' : key === 'site_language' ? 'Язык Сайта' : key === 'contact_country' ? 'Страну Контакта' : key.replace(/_/g, ' ')}:`;
+
+    bot.sendMessage(chatId, message, {
+        reply_markup: {
+            inline_keyboard,
+        },
+    });
+};
+
+
+//newe keyboard
+
+const sendOptionsTwoColumns = (chatId, key, optionsArray) => {
+    console.log(`Отправка опций для ${key} в чат: ${chatId}`);
+
+    const keyboard = [];
+    for (let i = 0; i < optionsArray.length; i += 2) {
+        keyboard.push([
+            { text: optionsArray[i] },
+            optionsArray[i + 1] ? { text: optionsArray[i + 1] } : null
+        ].filter(Boolean));
+    }
+
+    const message = `Выберите ${key === 'site_theme' ? 'Тему Сайта' : key === 'site_language' ? 'Язык Сайта' : key === 'contact_country' ? 'Страну Контакта' : key.replace(/_/g, ' ')}:`;
+
+    bot.sendMessage(chatId, message, {
+        reply_markup: {
+            keyboard: keyboard,
+            resize_keyboard: true,
+            one_time_keyboard: true,
+        },
+    });
+};
+
+
+const askForInputWithSkip = (chatId, key, skipStep) => {
+    const message = `Введите ${key === 'key_words' ?  `Ключевые Слова через запятую или нажмите 'Пропустить'` : key === 'stop_words' ? `Стоп Слова через запятую или нажмите 'Пропустить'` : key.replace(/_/g, ' ')}:`;
+    bot.sendMessage(chatId, message, {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Пропустить', callback_data: `skip:${skipStep}` }],
+            ],
+        },
+    });
+};
+
+const askForInput = (chatId, key) => {
+    bot.sendMessage(chatId, `Введите ${key.replace(/_/g, ' ')}:`);
+};
+
+const startSiteGenerationBalance = async (chatId) => {
+    const siteTheme = formState[chatId].site_theme;  // Main site theme
+    const subCategories = formState[chatId].sub_categories || [];  // Selected subcategories
+
+    // Combine site theme with subcategories for site_theme field
+    const siteThemeWithSubCategories = [siteTheme, ...subCategories.map(index => shortToFullMap[`st_sc:${index}`])].join(', ');
+
+    const inputs = {
+        webhook: `${server_url}/webhook/?user_id=${chatId}`,
+        user_id: chatId,
+        site_type: 'Landing',
+        file_extension: formState[chatId].file_extension,
+        site_count: formState[chatId].site_count || '1',
+        rename_index: 'false',
+        edit_after_generation: 'true',
+        site_theme: siteThemeWithSubCategories,
+        site_language: formState[chatId].site_language,
+        contact_country: formState[chatId].contact_country,
+        key_words: formState[chatId].key_words || '',
+        stop_words: formState[chatId].stop_words || '',
+        domain_name: formState[chatId].domain_name,
+
+    };
+
+    console.log('Вводные данные:', inputs);
+
+    //проверяем баланс юзера
+    let balance = await Balance.findOne({ chatId });
+    let  balance_ok = 'false'
+    console.log('balance', balance)
+
+    try {
+        if (balance) {
+            console.log('balance try', balance)
+                let count = formState[chatId].site_count || '1';
+                console.log('count', count)
+                let price = process.env.WHITE_PRICE
+                let balance_check =  balance.balance
+                // Проверка, достаточно ли средств для генерации
+                if (price * count > balance_check) {
+                    bot.sendMessage(chatId, 'Недостаточно средств на счете. Пополните счет.');
+                    sendPaymentOptionsSubscription(chatId);
+                } else {
+                    balance_ok = 'true'; // Достаточно средств
+                    balance.balance -= price * count;
+                    balance_check =  balance.balance;
+                    console.log('balance_check', balance_check )
+                    await balance.save();
+
+                    const response = await axios.post(`${server_url}/api/v1/generatorTelegram`, inputs);
+                    if (response.status === 200) {
+                        // bot.sendMessage(chatId, '✅ Ваш запрос на генерацию сайта успешно начат.');
+                        console.log('СЕРВЕР ГЕНЕРАЦИИ: ✅ status === 200.')
+                      
+
+                    } else {
+                        console.log('Ошибка в ответе от сервера:', response.status);
+                        bot.sendMessage(chatId, 'Произошла ошибка при генерации сайта. Попробуйте еще раз.');
+                    }
+                }
+              
+        }
+    
+        
+
+           
+
+    } catch (error) {
+        console.error('Ошибка при запросе к серверу:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при генерации сайта. Попробуйте еще раз.');
+    }
+};
+
+
+
+const startSiteGeneration = async (chatId) => {
+    const siteTheme = formState[chatId].site_theme;  // Main site theme
+    const subCategories = formState[chatId].sub_categories || [];  // Selected subcategories
+
+    // Combine site theme with subcategories for site_theme field
+    const siteThemeWithSubCategories = [siteTheme, ...subCategories.map(index => shortToFullMap[`st_sc:${index}`])].join(', ');
+
+    const inputs = {
+        webhook: `${server_url}/webhook/?user_id=${chatId}`,
+        user_id: chatId,
+        site_type: 'Landing',
+        file_extension: formState[chatId].file_extension,
+        site_count: formState[chatId].site_count || '1',
+        rename_index: 'false',
+        edit_after_generation: 'true',
+        site_theme: siteThemeWithSubCategories,
+        site_language: formState[chatId].site_language,
+        contact_country: formState[chatId].contact_country,
+        key_words: formState[chatId].key_words || '',
+        stop_words: formState[chatId].stop_words || '',
+        domain_name: formState[chatId].domain_name,
+
+    };
+
+    console.log('Вводные данные:', inputs);
+
+    //проверяем баланс юзера
+    let counter = await Counter.findOne({ chatId });
+    let  counter_ok = 'false'
+    console.log('counter', counter)
+
+    try {
+        if (counter) {
+            console.log('counter_try', counter)
+                let count = formState[chatId].site_count || '1';
+                console.log('count', count)
+                let price = process.env.WHITE_PRICE
+                let counter_check =  counter.render_counter
+                let dateLastPurchaseCheck = counter.last_purchase_date;
+
+                const now = new Date();
+                const oneMonthAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); 
+                if (counter.last_purchase_date < oneMonthAgo) {
+                    counter.render_counter = 0;
+                    await counter.save();
+                    bot.sendMessage(chatId, 'Прошло более 30 дней с момента Вашей последней оплаты. Ваша подписка истекла. Пополните счет.');
+                }
+
+                // Проверка, достаточно ли средств для генерации
+                if ( count > counter_check) {
+                    bot.sendMessage(chatId, 'Недостаточно средств на счете. Пополните счет.');
+                    sendPaymentOptionsSubscription(chatId);
+                } else {
+                    counter_ok = 'true'; // Достаточно средств
+                    counter_check.render_counter -= count;
+                    counter_check_check =  counter_check.render_counter;
+                    console.log('counter_check', counter_check )
+                    await counter.save();
+
+                    const response = await axios.post(`${server_url}/api/v1/generatorTelegram`, inputs);
+                    if (response.status === 200) {
+                        // bot.sendMessage(chatId, '✅ Ваш запрос на генерацию сайта успешно начат.');
+                        console.log('СЕРВЕР ГЕНЕРАЦИИ: ✅ status === 200.')
+                      
+
+                    } else {
+                        console.log('Ошибка в ответе от сервера:', response.status);
+                        bot.sendMessage(chatId, 'Произошла ошибка при генерации сайта. Попробуйте еще раз.');
+                    }
+                }
+              
+        }
+        else{  bot.sendMessage(chatId, 'Недостаточно средств на счете. Пополните счет.  /menu');
+            return;
+        }
+    
+        
+
+           
+
+    } catch (error) {
+        console.error('Ошибка при запросе к серверу:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при генерации сайта. Попробуйте еще раз.');
+    }
+};
+
+
+
+
+
+
+
+
+
+
+/// 
+
+const askForSiteCount = (chatId) => {
+    const inline_keyboard = options.site_count.map(count => [{
+        text: count,
+        callback_data: `site_count:${count}`
+    }]);
+    bot.sendMessage(chatId, 'Выберите количество сайтов для генерации:', {
+        reply_markup: {
+            inline_keyboard,
+        },
+    });
+};
+
+
+
+
+
+
+const askForSubCategories = (chatId, theme) => {
+    const subCats = options.sub_categories[theme] || [];
+    if (subCats.length === 0) {
+        // Если нет подкатегорий, сразу переходим к следующему шагу
+        askForSiteCount(chatId);
+    } else {
+        const inline_keyboard = subCats.map((subCat, index) => [{
+            text: subCat,
+            callback_data: `sub_categories:${index}` // Index used instead of full text
+        }]);
+        bot.sendMessage(chatId, 'Выберите подкатегорию:', {
+            reply_markup: {
+                inline_keyboard,
+            },
+        });
+    }
+};
+
+// Add the available file extensions to the options
+const fileExtensionOptions = ['PHP', 'HTML'];
+
+// Function to send file extension options
+const askForFileExtension = (chatId) => {
+    console.log(`Отправка опций для выбора расширения файла в чат: ${chatId}`);
+    const inline_keyboard = fileExtensionOptions.map(option => ({
+        text: option,
+        callback_data: `file_extension:${option}` // Убедитесь, что здесь нет лишних пробелов
+    }));
+
+    bot.sendMessage(chatId, 'Выберите расширение файла:', {
+        reply_markup: {
+            inline_keyboard: [inline_keyboard]
+        }
+    });
+};
+
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    sendMainMenu(chatId);
+   // sendBottomMenu(chatId); // Отправляем кнопки меню внизу
+});
+
+
+ 
+
+
+bot.onText(/\/menu/, (msg) => {
+    const chatId = msg.chat.id;
+    sendBottomMenu(chatId);
+});
+
+
+const askForLanguage = (chatId) => {
+    console.log(`Отправка опций для выбора языка сайта в чат: ${chatId}`);
+    sendOptionsTwoColumns(chatId, 'site_language', options.site_language);
+}
+
+const askForCountry = (chatId) => {
+    console.log(`Отправка опций для выбора страны контакта в чат: ${chatId}`);
+    sendOptionsTwoColumns(chatId, 'contact_country', options.contact_country);
+}
+
+
+//69$  - 100 вайтов
+
+//89$ - 200 вайтов 
+
+//109 - 300 вайтов
+
+//129$ - 400 сайтов 
+
+//149$ - 500 вайтов
+
+
+
+const sendPaymentOptionsSubscription = (chatId) => {
+    const paymentOptions = [
+        [{ text: '$69 - 100 Вайтов', callback_data: 'payment:69' }, { text: '$89 - 200 Вайтов', callback_data: 'payment:89' }],
+        [{ text: '$109 - 300 вайтов', callback_data: 'payment:109' }, { text: '$129 - 400 вайтов', callback_data: 'payment:129' }],
+        [{ text: '$149 - 500 вайтов', callback_data: 'payment:149' }] //{ text: 'Другая Сумма', callback_data: 'payment:alt' }
+    ];
+
+    bot.sendMessage(chatId, 'Выберите сумму для пополнения счета:', {
+        reply_markup: {
+            inline_keyboard: paymentOptions
+        }
+    });
+};
+
+
+
+const sendPaymentOptions = (chatId) => {
+    const paymentOptions = [
+        [{ text: '$1', callback_data: 'payment:1' }, { text: '$5', callback_data: 'payment:5' }],
+        [{ text: '$10', callback_data: 'payment:10' }, { text: '$20', callback_data: 'payment:20' }],
+        [{ text: '$50', callback_data: 'payment:50' }, { text: '$100', callback_data: 'payment:100' }],
+        [{ text: '$300', callback_data: 'payment:300' }, { text: '$500', callback_data: 'payment:500' }]
+    ];
+
+    bot.sendMessage(chatId, 'Выберите сумму для пополнения счета:', {
+        reply_markup: {
+            inline_keyboard: paymentOptions
+        }
+    });
+};
+ 
+
+
+
+ 
+
+async function createInvoice(apiKey, invoiceData) {
+    const url = 'https://api.cryptocloud.plus/v1/invoice/create';
+    
+    try {
+        const response = await axios.post(url, invoiceData, {
+            headers: {
+                'Authorization': `Token ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data; // Возвращаем данные ответа
+    } catch (error) {
+        console.error('Ошибка при запросе к API CryptoCloud:', error);
+        throw error; // Пробрасываем ошибку, чтобы обработать её в вызывающем коде
+    }
+}
+
+async function sendProfile(chatId) {
+    let user_id = chatId;
+
+    // Обновление базы данных 
+    let balance = await Balance.findOne({ user_id });
+    let counter = await Counter.findOne({ user_id });
+   
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 дней назад
+
+    let actual_balance = 0;
+    let actual_counter = 0;
+   
+     
+    if (counter){
+        if (counter.last_purchase_date < oneMonthAgo) {
+            counter.render_counter = 0;
+            if (balance) {
+                balance.balance = 0;
+                await balance.save();
+            }
+            await counter.save();
+        }
+        if (balance) {
+            actual_balance = balance.balance;
+        }
+        actual_counter = counter.render_counter;
+    }
+
+  
+
+    bot.sendMessage(chatId, `Аккаунт ID: ${chatId}, 
+        ┗✅ STATS:
+        ┗ Баланс: ${actual_balance} USD 
+        ┗ Вайты: ${actual_counter}`);
+}
+ 
+let setInvoice = '';
+// Функция для создания запроса на оплату
+
+async function createPayment(chatId, amount) {
+    console.log(`Запуск createPayment с суммой: ${amount}`);
+    
+   
+
+    const invoiceData = {
+        amount: amount.toString(),
+        currency: "USD",
+        order_id: chatId,
+        shop_id: 'tPOQBDANTCRRZ4ZQ',
+        email: "example@example.com",  // Тестовый email
+        payer_currency: "USD",
+        success_url: "https://telegrambotwhitepagegen.onrender.com/api/v1/payment/successful-payment",
+        fail_url: "https://telegrambotwhitepagegen.onrender.com/api/v1/payment/failed-payment",
+        callback_url: "https://telegrambotwhitepagegen.onrender.com/api/payment",
+        desc: "Пополнение счета"
+    };
+
+    try {
+        const response = await axios.post('https://api.cryptocloud.plus/v1/invoice/create', invoiceData, {
+            headers: {
+                'Authorization': `Token ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data && response.data.status === "success") {
+
+            const paymentUrl = response.data.pay_url;
+            const invoice_id = response.data.invoice_id;
+            setInvoice = invoice_id;
+
+            bot.sendMessage(chatId, `Для продолжения оплаты перейдите по ссылке: ${paymentUrl}`);
+            console.log(`Ссылка на оплату отправлена пользователю ${chatId}: ${paymentUrl}`);
+
+        } else {
+
+            console.error('Ошибка при создании платежа:', response.data);
+            bot.sendMessage(chatId, 'Произошла ошибка при создании платежа. Попробуйте позже.');
+
+        }
+    } catch (error) {
+        console.error('Ошибка при запросе к API CryptoCloud:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при создании платежа. Попробуйте позже.');
+    }
+}
+
+
+
+let couponCode = ''; 
+
+const askForCoupon = (chatId) => {
+    bot.sendMessage(chatId, 'Введите код купона:')
+        .then(() => {
+            // Сохраняем состояние ожидания ввода кода купона
+            formState[chatId].currentStep = 'coupon_code';
+        });
+};
+ 
+let coupon = '';
+
+const sendCouponCode = async (chatId, couponCode) => {
+    bot.sendMessage(chatId, 'Проверяем купон...')
+    coupon  = couponCode;
+    let user_id = chatId;
+    try {
+        const response = await axios.post(`${server_url}/api/v1/couponCounter`, { user_id, coupon });
+        if (response.status === 200) {
+            console.log('Купон успешно отправлен на сервер.');
+            
+        } else {
+            console.log('Ошибка при отправке купона на сервер:', response.status);
+        }
+    } catch (error) {
+        console.error('Ошибка при отправке купона на сервер:', error);
+    }
+};
+
+
+
+bot.on('callback_query', async (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const [key, value] = callbackQuery.data.split(':').map(v => v.trim());
+
+    if (!formState[chatId]) {
+        formState[chatId] = {};
+    }
+
+
+
+    if (formState[chatId][key] && formState[chatId][key] === value) {
+        console.log(`Пользователь уже выбрал этот параметр: ${key}:${value}`);
+        return;
+    }
+    if (key.startsWith('language:')) {
+        const selectedLanguage = data.split(':')[1];
+        if (selectedLanguage === 'ru') {
+            // Установите русский язык для пользователя
+            bot.sendMessage(chatId, 'Вы выбрали язык: Русский');
+            // Здесь вы можете сохранить выбор языка пользователя и продолжить взаимодействие на русском
+        } else if (selectedLanguage === 'en') {
+            // Установите английский язык для пользователя
+            bot.sendMessage(chatId, 'You have selected: English');
+            // Здесь вы можете сохранить выбор языка пользователя и продолжить взаимодействие на английском
+        }
+    }
+    else
+    if (key === 'buy_tokens') {
+        sendPaymentOptionsSubscription(chatId);
+    } else if (key === 'payment') {
+        const amount = parseInt(value, 10);
+        await createPayment(chatId, amount);
+        console.log(`Запуск createPayment с суммой: ${amount}`);
+         
+    } else if (key === 'apply_coupon') {
+        askForCoupon(chatId); // Запрос на ввод купона
+    }
+
+    else if (key === 'send_coupon_code') {
+       await sendCouponCode(chatId, couponCode);
+        console.log(`купон: ${couponCode}`);
+         
+    } 
+    
+    
+    
+    else if (key === 'generate_site') {
+        formState[chatId] = {};
+        sendOptionsTwoColumns(chatId, 'site_theme', options['site_theme']);
+
+    } 
+        else if (key === 'skip') {
+
+        if (value === 'key_words') {
+            formState[chatId].key_words = ''; // Skip the key_words input
+            askForInputWithSkip(chatId, 'stop_words', 'stop_words'); // Next step is stop_words
+            formState[chatId].currentStep = 'stop_words';
+        } 
+        else if (value === 'stop_words') {
+            formState[chatId].stop_words = ''; // Skip the stop_words input
+            askForInput(chatId, 'domain_name'); // Next step is domain_name
+            formState[chatId].currentStep = 'domain_name';
+        } 
+        else if (value === 'domain_name') {
+            startSiteGeneration(chatId);
+        }
+
+        
+    } else if (options[key]) {
+        formState[chatId][key] = value;
+
+        if (key === 'site_theme') {
+            askForSubCategories(chatId, value); // Ask for sub-categories when site_theme is selected
+        } 
+        else if (key === 'sub_categories') {
+           
+             if (!Array.isArray(formState[chatId].sub_categories)) {
+                console.log(`Инициализация sub_categories как массив для чата: ${chatId}`);
+                formState[chatId].sub_categories = [];
+            }
+
+            formState[chatId].sub_categories.push(value);
+            askForSiteCount(chatId); // Ask for site count after sub-categories
+
+        } 
+        
+        else if (!formState[chatId].site_count) {
+            askForSiteCount(chatId); // Request site count next
+        } 
+        
+        else if (!formState[chatId].file_extension) {
+            askForFileExtension(chatId); // Request file extension next
+        } 
+        
+        else if (!formState[chatId].site_language) {
+            askForLanguage(chatId); // Request site language
+        } 
+        
+        else if (!formState[chatId].contact_country) {
+            askForCountry(chatId); // Request contact country
+        } 
+        
+        else if (key === 'file_extension') {
+            formState[chatId].file_extension = value;
+            // After file extension, request key words
+            askForInputWithSkip(chatId, 'key_words', 'key_words');
+            formState[chatId].currentStep = 'key_words';
+        } 
+        
+        else {
+            // Key words step
+            askForInputWithSkip(chatId, 'key_words', 'key_words');
+            formState[chatId].currentStep = 'key_words';
+        }
+    } 
+    
+    else {
+        console.error(`Неизвестный ключ: ${key}`);
+        bot.sendMessage(chatId, `Ошибка: Неизвестный ключ ${key}`);
+    }
+});
+
+
+// Поддержка
+const supportLink = 'https://t.me/SPY_AGENCY'
+
+sendSupportLink = (chatId)=> {
+    bot.sendMessage(chatId, `Поддержка: ${supportLink}`);
+}
+
+
+
+// Функция для запуска генератора
+const generate_site = (chatId) => {
+    formState[chatId] = {};
+    sendOptionsTwoColumns(chatId, 'site_theme', options['site_theme']);
+};
+
+
+
+//получаем сообщения и команды от юзера
+
+bot.on('message', (msg) => {
+    
+    const chatId = msg.chat.id;
+
+     if (msg.text === '/start') {
+        sendMainMenu(chatId);
+    } else if (msg.text === '🚀 Старт') {
+        sendLanguageSelectionMenu(chatId);
+    } else if (msg.text === '🤖 Генератор') {
+        generate_site(chatId);
+    } 
+    
+    else if (msg.text === '💸 Пополнить Счет') {
+        sendPaymentOptionsSubscription(chatId);
+    
+    } 
+
+    else if (formState[chatId]?.currentStep === 'coupon_code') {
+        if (msg.text.startsWith('/')){
+
+
+        }
+        else{
+
+            couponCode = msg.text; // Сохраняем введенный код купона
+            sendCouponCode(chatId, couponCode); // Запускаем отправку кода купона
+            delete formState[chatId].currentStep; // Удаляем состояние после обработки
+
+        }
+      
+    }
+
+  
+    
+    else if (msg.text === '💵 Применить Купон') {
+    askForCoupon(chatId); // Запрос на ввод купона
+    console.log('askForCoupon')
+    
+    } 
+    else if (msg.text === '🧑‍💻 Профиль') {
+        // Добавьте здесь логику для профиля пользователя
+        sendProfile(chatId);
+
+    } 
+    
+    else if (msg.text === '💡 Поддержка') {
+
+        // Добавьте здесь логику для поддержки пользователя
+        sendSupportLink(chatId);
+
+
+    } else {
+      
+        if (!formState[chatId]) {
+            formState[chatId] = {};
+        }
+
+        const currentStep = formState[chatId].currentStep;
+
+        if (currentStep === 'key_words') {
+            formState[chatId].key_words = msg.text;
+            askForInputWithSkip(chatId, 'stop_words', 'stop_words'); // Next step is stop_words
+            formState[chatId].currentStep = 'stop_words';
+        } 
+        
+        else if (currentStep === 'stop_words') {
+            formState[chatId].stop_words = msg.text || ''; // Collect stop_words input
+            askForInput(chatId, 'domain_name'); // Next step is domain_name
+            formState[chatId].currentStep = 'domain_name';
+        } 
+        
+        else if (currentStep === 'domain_name') {
+            formState[chatId].domain_name = msg.text;
+            startSiteGeneration(chatId);
+            delete formState[chatId].currentStep; // Remove currentStep
+        } 
+        
+        else {
+            bot.sendMessage(chatId, 'Пожалуйста, используйте меню для выбора опций или отправьте команду /start');
+        }
+    }
+});
+
+bot.on('polling_error', (error) => {
+    console.error(error.code);
+});
+
+
+//уведомления от сервера генерации
+
+app.post('/notify', (req, res) => {
+    console.log('Получено уведомление от сервера генерации:', req.body);
+
+    const { user_id, message } = req.body;
+
+    if (!user_id || !message) {
+        console.error('Отсутствует user_id или сообщение в полученном уведомлении');
+        return res.status(400).send('Отсутствует user_id или сообщение');
+    }
+
+    bot.sendMessage(user_id, message)
+        .then(() => {
+            console.log(`Сообщение отправлено пользователю ${user_id}: ${message}`);
+            res.status(200).send('Уведомление получено и сообщение отправлено.');
+        })
+        .catch((err) => {
+            console.error(`Ошибка при отправке сообщения пользователю ${user_id}:`, err.message);
+            res.status(500).send('Не удалось отправить сообщение');
+        });
+});
+
+
+
+//купоны
+
+app.post('/notifycoupon', (req, res) => {
+    console.log('Получено уведомление от сервера генерации:', req.body);
+
+    const { user_id, message } = req.body;
+
+    if (!user_id || !message) {
+        console.error('Отсутствует user_id или сообщение в полученном уведомлении');
+        return res.status(400).send('Отсутствует user_id или сообщение');
+    }
+
+    const textMessage =  message.message;
+
+    bot.sendMessage(user_id, textMessage)
+        .then(() => {
+            console.log(`Сообщение отправлено пользователю ${user_id}: ${textMessage}`);
+            res.status(200).send('Уведомление получено и сообщение отправлено.');
+        })
+        .catch((err) => {
+            console.error(`Ошибка при отправке сообщения пользователю ${user_id}:`, err.message);
+            res.status(500).send('Не удалось отправить сообщение');
+        });
+});
+
+
+
+// Обработка уведомлений от Cryptomus
+
+app.post('/payment/old', (req, res) => {
+    const { order_id, status } = req.body;
+    console.log(req.body)
+    if (status === 'paid') {
+        bot.sendMessage(order_id, 'Ваш платеж успешно получен. Начинаем генерацию сайта.');
+        startSiteGeneration(order_id); // Отправка запроса на генерацию
+    } else {
+        bot.sendMessage(order_id, 'Платеж не прошел. Попробуйте снова.');
+    }
+
+    res.sendStatus(200);
+});
+
+
+ 
+// Middleware to verify the JWT token
+const verifyToken = (token) => {
+    return new Promise((resolve, reject) => {
+        jwt.verify(token, SECRET_KEY, { algorithms: ['HS256'] }, (err, decoded) => {
+            if (err) {
+                console.error('Ошибка верификации токена:', err.message);
+                return reject(err);
+            }
+            resolve(decoded);
+        });
+    });
+};
+
+
+app.post('/api/payment/', async (req, res) => {
+    const { status, invoice_id, amount_crypto, currency, order_id, token } = req.body;
+    let show_balance = ''
+    console.log('Request token:', token); 
+    console.log('Request Body:', req.body); // Логирование тела запроса
+    console.log('setInvoice', setInvoice);
+    // Проверка наличия всех необходимых полей
+    if (!status || !invoice_id || !amount_crypto || !currency || !order_id || !token) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+
+    try {
+        // Верификация JWT токена
+        const decoded = await verifyToken(token);
+
+        let show_counter = '';
+
+        console.log("decoded", decoded.id)
+
+        if (decoded.id === setInvoice) {
+            console.log("setInvoice", `${decoded.id} === ${setInvoice}`)
+        }
+        else{
+           
+            throw new Error('Invalid invoice ID');
+            console.log(`Payment failed for order ${order_id}`);
+            bot.sendMessage(order_id, `Payment failed for order ${order_id}`);
+            return;
+        }
+     
+        // Обработка успешного платежа
+        if (status === 'success') {
+            console.log(`Payment successful for order ${order_id}: ${amount_crypto} ${currency}`);
+           
+             // логика обработки успешного платежа
+            try {
+
+                
+                let user_id = order_id;
+                //  обновление базы данных 
+                let balance = await Balance.findOne({ user_id });
+
+
+
+        if (balance) {
+            // Update the existing counter
+              balance.balance += parseFloat(amount_crypto);
+              balance.total_spent += parseFloat(amount_crypto);
+
+            show_balance = balance.total_spent
+
+            // Check if the counter has reached or gone below 0
+            if (balance.balance <= 0) {
+                // return res.status(200).json({ success: false, message: 'You have reached the limit' });
+                show_balance = parseFloat(amount_crypto);
+            }
+
+            await balance.save();
+
+        } else {
+            // Create a new counter
+            balance = await Balance.create({
+                user_id,
+                balance: amount_crypto,
+                total_spent: amount_crypto
+            });
+
+            show_balance = balance.total_spent
+        }
+           
+
+        let addCounter = 0;
+
+        let addCounterData =  parseFloat(amount_crypto);
+
+        console.log('addCounterData: ', addCounterData);
+
+        let counter = await Counter.findOne({ user_id });
+
+            // Сравниваем addCounterData с числовыми значениями
+            if (addCounterData === 69) {
+                addCounter = 100;
+                console.log('addCounter 100: ', addCounter);
+            } else if (addCounterData === 89) {
+                addCounter = 200;
+            } else if (addCounterData === 109) {
+                addCounter = 300;
+            } else if (addCounterData === 129) {
+                addCounter = 400;
+            } else if (addCounterData === 149) {
+                addCounter = 500;
+            }
+
+
+        if (counter) {
+            // Update the existing counter
+            counter.render_counter += addCounter;
+
+             const now = new Date();
+             // const oneMonthAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 дней назад
+
+            counter.last_purchase_date = now;
+
+
+            await counter.save();
+
+            show_counter = counter.render_counter
+
+            console.log('updated show_counter:', show_counter)
+
+            // Check if the counter has reached or gone below 0
+            if (counter.render_counter <= 0) {
+                // return res.status(200).json({ success: false, message: 'You have reached the limit' });
+                 show_counter = addCounter;
+
+                 await balance.save();
+            }
+
+            await counter.save();
+
+        } else {
+
+            let render_counter_total;
+            let last_purchase_date;
+            // Create a new counter
+            counter = await Counter.create({
+                user_id,
+                render_counter: addCounter,
+                render_counter_tota: 0,
+                last_purchase_date: new Date()
+
+            });
+
+            show_counter = counter.render_counter
+        }
+
+         
+
+            } 
+            
+            catch (error) {
+                console.error('Invalid userBalance:', error);
+                res.status(403).json({ message: 'DATA BASE ERROR' });
+            }
+          
+            
+            // уведомление пользователя 
+           // bot.sendMessage(order_id, `Ваш баланс: $${show_balance}`);
+            bot.sendMessage(order_id, `Ваш платеж успешно получен. Ваш счет пополнен на ${amount_crypto} ${currency}`);
+      
+              
+            // уведомление пользователя 
+            bot.sendMessage(order_id, `Вы можете сгенерировать: ${show_counter} Вайтов`);
+           // bot.sendMessage(order_id, `Ваш платеж успешно получен. Ваш счет пополнен на ${amount_crypto} ${currency}`);
+
+         
+             //generate_site(order_id); // Отправка запроса на генерацию
+
+        } else {
+            console.log(`Payment failed for order ${order_id}`);
+        }
+
+        res.json({ message: 'Postback received' });
+    } catch (error) {
+        console.error('Invalid token:', error);
+        res.status(403).json({ message: 'Invalid token' });
+    }
+});
+
+app.post('/api/payment/test', (req, res) => {
+    const {
+        status,
+        invoice_id,
+        amount_crypto,
+        currency,
+        order_id,
+        token,
+        invoice_info
+    } = req.body;
+
+    console.log('Request Body:', req.body);
+
+    try {
+        // Вывод логов для тестовых платежей
+        if (status === 'success') {
+            console.log(`Payment successful for Invoice ID: ${invoice_id}`);
+            console.log(`Amount: ${amount_crypto} ${currency}`);
+            console.log(`Order ID: ${order_id}`);
+            
+            if (setInvoice === invoice_id) {
+                bot.sendMessage(new_chatId, 'Ваш платеж успешно получен. Начинаем генерацию сайта.');
+                startSiteGeneration(new_chatId); // Запуск процесса генерации сайта
+            }
+        }
+
+        res.json({ message: 'Postback received successfully' });
+    } catch (error) {
+        console.error('Error processing test payment:', error.message);
+        res.status(400).json({ error: 'Payment processing failed' });
+    }
+});
+
+
+
+app.post('/api/payment/test', async (req, res) => {
+    
+    console.log('Request Body:', req.body);
+
+    // Destructure the request body
+    const { status, invoice_id, amount_crypto, currency, order_id, token } = req.body;
+
+    // Check if all fields are present
+    if (!status || !invoice_id || !amount_crypto || !currency || !order_id || !token) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    console.log("Received payment notification:", req.body);
+
+    try {
+        // Verify the JWT token
+        const decoded = await verifyToken(token);
+
+        // Additional checks (optional)
+        if (decoded.invoice_id !== invoice_id) {
+            throw new Error('Invalid invoice ID');
+        }
+
+        // Process the postback if the status is successful
+        if (status === 'success') {
+            console.log(`Payment successful for order ${order_id}: ${amount_crypto} ${currency}`);
+            if (setInvoice === invoice_id) {
+                // Handle successful payment logic
+                bot.sendMessage(new_chatId, 'Ваш платеж успешно получен. Начинаем генерацию сайта.');
+                startSiteGeneration(new_chatId); // Start site generation process
+            }
+        } else {
+            console.log(`Payment failed for order ${order_id}`);
+        }
+
+        res.json({ message: 'Postback received' });
+    } catch (error) {
+        console.error('Invalid token:', error);
+        res.status(403).json({ message: 'Invalid token' });
+    }
+    res.json({ message: 'Postback received' });
+});
+
+app.post('/api/payment/test', (req, res) => {
+const { status, invoice_id, amount_crypto, currency   } = req.body;
+ 
+
+//const chat_id = msg.chat.id;
+ 
+
+console.log(req.body)
+
+//const token = req.body.token;
+
+  
+    // Проверка токена JWT
+    try {
+       // const decoded = jwt.verify(token, SECRET_KEY, { algorithms: ['HS256'] });
+        // Проверка истечения срока действия токена (это делается автоматически в jwt.verify)
+       // console.log('JWT Token is valid:', decoded);
+
+        // Обработка данных платежа
+        if (status === 'success') {
+            console.log(`Payment successful for Invoice ID: ${invoice_id}`);
+            console.log(`Amount: ${amount_crypto} ${currency}`);
+            console.log(`Order ID: ${invoice_id}`);
+
+            if (setInvoice === invoice_id){
+                          // ... Здесь можно добавить код для обработки успешного платежа ...
+            bot.sendMessage(new_chatId, 'Ваш платеж успешно получен. Начинаем генерацию сайта.');
+            startSiteGeneration(new_chatId); // Отправка запроса на генерацию
+            }
+          
+  
+        }
+
+        res.json({ message: 'Postback received successfully' });
+    } catch (err) {
+        console.error('Invalid JWT token:', err.message);
+        res.status(401).json({ error: 'Invalid token' });
+    }
+});
+
+
+
+
+const startServer = async () => {
+    try {
+      connectDB(process.env.MONGODB_URL);
+      const PORT = process.env.PORT || 3000;
+
+        app.listen(PORT, () => {
+            console.log(`Сервер бота Telegram запущен на порту ${PORT}`);
+        });
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  startServer();
