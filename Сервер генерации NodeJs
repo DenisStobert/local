@@ -92,26 +92,6 @@ async function sendToClientWithUserId(track_id, message) {
     }
   }
 }
-
-
-
-// Function to read random section from HTML files
-function getRandomSection(filePath) {
-  try {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const sections = fileContent.match(/<section[^>]*>([\s\S]*?)<\/section>/gi);
-    if (sections && sections.length > 0) {
-      const randomIndex = Math.floor(Math.random() * sections.length);
-      return sections[randomIndex];
-    } else {
-      throw new Error(`No sections found in ${filePath}`);
-    }
-  } catch (error) {
-    console.error(`Error reading sections from ${filePath}:`, error);
-    throw error;
-  }
-}
-
 // Function to read random section from HTML files
 function getRandomPartTop(filePath) {
   try {
@@ -127,73 +107,6 @@ function getRandomPartTop(filePath) {
     console.error(`Error reading sections from ${filePath}:`, error);
     throw error;
   }
-}
-
-// Function to build PHP template from blocks (Main Page)
-function buildPhpTemplate(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код Главной страницы.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  const topPhpPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topPhp = fs.readFileSync(topPhpPath, 'utf-8');
-
-  const bottomPhpPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomPhp = fs.readFileSync(bottomPhpPath, 'utf-8');
-
-  const categories = [
-    'hero', 'features', 'benefits', 'product', 'services', 'aboutus',
-    'team', 'blog_php', 'cta', 'testimonial',
-    'contact', 'footer_php'
-  ];
-
-  let combinedPhp = topPhp;
-
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedPhp += section;
-    }
-  });
-
-  combinedPhp += bottomPhp;
-  return combinedPhp.toString();
-}
-
-// Function to build PHP services template (Services Page)
-function buildPhpTemplateServices(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем PHP страницы Сервисы.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  const topPhpPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topPhp = fs.readFileSync(topPhpPath, 'utf-8');
-
-  const bottomPhpPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomPhp = fs.readFileSync(bottomPhpPath, 'utf-8');
-
-  const categories = ['company_services', 'footer_php'];
-
-  let combinedPhpservices = topPhp;
-
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedPhpservices += section;
-    }
-  });
-
-  combinedPhpservices += bottomPhp;
-
-  return combinedPhpservices.toString();
 }
 
 // (Similarly, update other template-building functions to use PHP)
@@ -281,305 +194,7 @@ async function savePhpToZip(newIndex, htmlContent, htmlContentServices, htmlCont
     archive.finalize();
   });
 }
-
-
-// Function to build HTML template from blocks
-function buildHtmlTemplate(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код главной страницы.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-  const categories = [
-    'hero', 'features', 'benefits', 'product', 'services', 'aboutus',
-    'team', 'blog', 'cta', 'testimonial',
-    'contact', 'footer'
-  ];
-  // Start building the combined HTML with the top part
-  let combinedHtml = topHtml;
-  // Iterate over each category and append a random block to the combined HTML
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtml += section;
-    }
-  });
-  // Append the bottom part to the combined HTML
-  combinedHtml += bottomHtml;
-  // Return the combined HTML as a string
-  return combinedHtml.toString();
-}
-
-
 // service PAGE
-
-// Function to build HTML services template from blocks
-function buildHtmlTemplatServices(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код страницы Сервисы.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['company_services', 'footer'];
-
-  let combinedHtmlservices = topHtml;
-
-  // Iterate over each category and append a random block to the combined HTML
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlservices += section;
-    }
-
-  });
-
-  // Append the bottom part to the combined HTML
-  combinedHtmlservices += bottomHtml;
-
-  // Return the combined HTML as a string
-  return combinedHtmlservices.toString();
-
-}
-
-
-
-// Function to build HTML services template from blocks
-function buildHtmlTemplatServicesPHP(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код страницы Сервисы.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['company_services', 'footer_php'];
-
-  let combinedHtmlservices = topHtml;
-
-  // Iterate over each category and append a random block to the combined HTML
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlservices += section;
-    }
-
-  });
-
-  // Append the bottom part to the combined HTML
-  combinedHtmlservices += bottomHtml;
-
-  // Return the combined HTML as a string
-  return combinedHtmlservices.toString();
-
-}
-
-async function buildHtmlTemplateThankyou(randomTemplate, track_id) {
-
-  //sendToClientWithUserId(track_id, '🔒 Генерируем Thank You Page.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['thankyou', 'footer'];
-
-  // Append the bottom part to the combined HTML
-  let combinedHtmlthankyou = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-
-
-      combinedHtmlthankyou += section;
-    }
-  }
-
-  combinedHtmlthankyou += bottomHtml;
-  return combinedHtmlthankyou;
-}
-
-async function buildHtmlTemplateThankyouPHP(randomTemplate, track_id) {
-
-  //sendToClientWithUserId(track_id, '🔒 Генерируем Thank You Page.');
-  sendToClientWithUserId(track_id, '🔒 Генерируем Thank You Page.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['thankyou', 'footer'];
-
-  // Append the bottom part to the combined HTML
-  let combinedHtmlthankyouPHP = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-
-
-      combinedHtmlthankyouPHP += section;
-    }
-  }
-
-  combinedHtmlthankyouPHP += bottomHtml;
-  return combinedHtmlthankyouPHP;
-}
-
-async function buildHtmlTemplatePolicy(site_language, randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🔒 Генерируем Privacy Policy.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['policy', 'footer'];
-
-  // Append the bottom part to the combined HTML
-  let combinedHtmlpolicy = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      const sectionPolicy = await translatedTextPolicyFromGPT4omini(section, site_language); // Await the translation
-
-      combinedHtmlpolicy += sectionPolicy;
-    }
-  }
-
-  combinedHtmlpolicy += bottomHtml;
-  return combinedHtmlpolicy;
-}
-
-
-async function buildHtmlTemplatePolicyPHP(site_language, randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🔒 Генерируем Privacy Policy.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['policy', 'footer_php'];
-
-  // Append the bottom part to the combined HTML
-  let combinedHtmlpolicy = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      const sectionPolicy = await translatedTextPolicyFromGPT4omini(section, site_language); // Await the translation
-
-      combinedHtmlpolicy += sectionPolicy;
-    }
-  }
-
-  combinedHtmlpolicy += bottomHtml;
-  return combinedHtmlpolicy;
-}
-
-
-// Function to build HTML template from blocks
-function buildHtmlTemplatAbout(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🏢 Генерируем страницу О Компании.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['company_about', "team", 'footer'];
-
-  let combinedHtmlabout = topHtml;
-
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlabout += section;
-    }
-
-  });
-
-  combinedHtmlabout += bottomHtml;
-  return combinedHtmlabout;
-}
-
 
 // Function to build HTML template from blocks
 function buildHtmlTemplatAboutPHP(randomTemplate, track_id) {
@@ -615,41 +230,157 @@ function buildHtmlTemplatAboutPHP(randomTemplate, track_id) {
   return combinedHtmlabout;
 }
 
-// Function to build HTML template from blocks
-function buildHtmlTemplateProduct(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код страницы Продукт.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['company_product', 'services', 'contact', 'footer'];
-
-  let combinedHtmlproduct = topHtml
-
-  categories.forEach(category => {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlproduct += section;
+async function generateTextWithLLM(promptConfig) {
+    const { prompt, systemPrompt } = promptConfig;
+    
+    try {
+      const response = await fetch('https://api.replicate.com/v1/models/anthropic/claude-3.7-sonnet/predictions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait'
+        },
+        body: JSON.stringify({
+          input: {
+            prompt,
+            max_tokens: 8192,
+            system_prompt: systemPrompt || "",
+            max_image_resolution: 0.5
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.output;
+    } catch (error) {
+      console.error('Error in Replicate API request:', error);
+      throw error;
     }
+  }
 
-  });
+  
+  function generatePromptsForHTMLGeneration(style, siteConfig) {
+    const { site_theme, site_language, contact_country, key_words, domain_name } = siteConfig;
+    
+    const basePrompt = `
+  Generate a complete website for a ${site_theme} business in ${site_language} language.
+  The website should include the following pages:
+  - Home page with hero section, features, about us, services, products, testimonials, and contact form
+  - About Us page with company history and mission
+  - Services page with detailed service descriptions
+  - Product page showcasing main products
+  - Contact page with address in ${contact_country} and contact form
+  - Privacy Policy page
+  - Three blog posts related to the business theme
+  
+  Keywords for SEO: ${key_words}
+  `;
+  
+    const styles = {
+      minimalist: `
+  ${basePrompt}
+  Design style: Minimalist
+  Use a clean, minimal design with ample white space, subtle animations, and focus on typography.
+  Color scheme: Monochromatic with one accent color
+  Typography: Sans-serif fonts, clear hierarchy
+  Layout: Simple grid, lots of white space, clear sections
+  Design elements: Minimal icons, subtle borders, clean forms
+  `,
+      corporate: `
+  ${basePrompt}
+  Design style: Corporate Professional
+  Create a professional business appearance with structured layout and formal elements.
+  Color scheme: Blue and gray palette with accent colors
+  Typography: Professional serif and sans-serif combination
+  Layout: Structured grid, clear business sections, organized information hierarchy
+  Design elements: Charts, graphs, business icons, formal buttons
+  `,
+      creative: `
+  ${basePrompt}
+  Design style: Creative and Bold
+  Design a vibrant and eye-catching website with creative elements and bold interactions.
+  Color scheme: Vibrant complementary colors
+  Typography: Creative mix of fonts, playful headings
+  Layout: Asymmetric layout, creative section breaks, dynamic scrolling
+  Design elements: Bold graphics, animated elements, creative forms, unique navigation
+  `,
+      ecommerce: `
+  ${basePrompt}
+  Design style: E-commerce Focused
+  Develop a shopping-oriented website with product showcases and clear call-to-actions.
+  Color scheme: Conversion-focused with clear CTAs
+  Typography: Clean, readable fonts optimized for product descriptions
+  Layout: Product grid, featured items carousel, category navigation
+  Design elements: Product cards, rating systems, add-to-cart buttons, checkout elements
+  `,
+      gaming: `
+  ${basePrompt}
+  Design style: Gaming Portal
+  Create an immersive gaming-themed website with interactive elements and game-like features.
+  Color scheme: Dark theme with vibrant neon accents
+  Typography: Futuristic/game-inspired fonts for headings, readable sans-serif for content
+  Layout: Immersive sections, game-like navigation, achievement highlights
+  Design elements: Progress bars, badges, game-inspired buttons, leaderboard-style tables
+  
+  Include a user registration form and interactive elements like calculators or mini-games.
+  Avoid mentioning real money earnings or gambling elements.
+  `,
+      luxury: `
+  ${basePrompt}
+  Design style: Luxury and Premium
+  Design an elegant and sophisticated website that conveys exclusivity and high-end quality.
+  Color scheme: Black, gold, and neutral tones
+  Typography: Elegant serif fonts, refined spacing
+  Layout: Spacious layout with large imagery, sophisticated animations
+  Design elements: High-quality product images, subtle animations, elegant forms
+  `,
+      news: `
+  ${basePrompt}
+  Design style: News/Magazine
+  Create a content-focused website with clear article layouts and effective content categorization.
+  Color scheme: Clear readable scheme with category color coding
+  Typography: News-style headlines, readable body text
+  Layout: Article grids, featured story sections, sidebar elements
+  Design elements: Article cards, reading time indicators, share buttons, subscription forms
+  `
+    };
+    
+    return styles[style] || styles.minimalist;
+  }
 
-  combinedHtmlproduct += bottomHtml;
-
-  return combinedHtmlproduct;
-}
-
+  
+  async function processLLMResponse(llmResponse, siteConfig) {
+    const { track_id, file_extension } = siteConfig;
+    
+    try {
+      // Разделить полученный HTML на отдельные страницы
+      const pages = extractPagesFromResponse(llmResponse);
+      
+      // Получить изображения для сайта
+      const imageUrls = await prepareImagesForSite(siteConfig);
+      
+      // Создать ZIP-архив с сайтом
+      const zipPath = await createSiteZipArchive(pages, imageUrls, track_id, file_extension);
+      
+      return {
+        status: 'success',
+        zipPath,
+        message: 'Site generated successfully'
+      };
+    } catch (error) {
+      console.error('Error processing LLM response:', error);
+      return {
+        status: 'error',
+        message: error.message
+      };
+    }
+  }
+  
 
 // Function to build HTML template from blocks
 function buildHtmlTemplateProductPHP(randomTemplate, track_id) {
@@ -685,214 +416,6 @@ function buildHtmlTemplateProductPHP(randomTemplate, track_id) {
 
   return combinedHtmlproduct;
 }
-
-
-
-async function buildHtmlTemplateBlog(randomTemplate, track_id) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['blog_page', 'blog', 'footer'];
-
-  let combinedHtmlblog = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog += section;
-    }
-  }
-
-  combinedHtmlblog += bottomHtml;
-
-  return combinedHtmlblog;
-}
-
-
-
-async function buildHtmlTemplateBlog2(randomTemplate, track_id) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['blog_page_2', 'blog', 'footer'];
-
-  let combinedHtmlblog2 = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog2 += section;
-    }
-  }
-
-  combinedHtmlblog2 += bottomHtml;
-
-  return combinedHtmlblog2;
-}
-
-
-async function buildHtmlTemplateBlog3(randomTemplate, track_id) {
-  sendToClientWithUserId(track_id, '🛠️ Генерируем Код страниц Блога.');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top/top.html`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom/bottom.html`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-  const categories = ['blog_page_3', 'blog', 'footer'];
-
-
-
-  let combinedHtmlblog3 = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog3 += section;
-    }
-  }
-
-  combinedHtmlblog3 += bottomHtml;
-
-  return combinedHtmlblog3;
-}
-
-
-
-// php blogs
-async function buildPHPTemplateBlog(randomTemplate, track_id) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['blog_page', 'blog_php', 'footer_php'];
-
-  let combinedHtmlblog = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog += section;
-    }
-  }
-
-  combinedHtmlblog += bottomHtml;
-
-  return combinedHtmlblog;
-}
-
-
-// php blogs
-async function buildPHPTemplateBlog2(randomTemplate, track_id) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['blog_page_2', 'blog_php', 'footer_php'];
-
-  let combinedHtmlblog = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog += section;
-    }
-  }
-
-  combinedHtmlblog += bottomHtml;
-
-  return combinedHtmlblog;
-}
-
-
-// php blogs
-async function buildPHPTemplateBlog3(randomTemplate, track_id) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // Read the top part of the HTML template
-  const topHtmlPath = path.join(__dirname, `../${randomTemplate}/top_php/top.php`);
-  const topHtml = fs.readFileSync(topHtmlPath, 'utf-8');
-
-  // Read the bottom part of the HTML template
-  const bottomHtmlPath = path.join(__dirname, `../${randomTemplate}/bottom_php/bottom.php`);
-  const bottomHtml = fs.readFileSync(bottomHtmlPath, 'utf-8');
-
-  const categories = ['blog_page_3', 'blog_php', 'footer_php'];
-
-  let combinedHtmlblog = topHtml;
-
-  for (const category of categories) {
-    const categoryPath = path.join(__dirname, `../${randomTemplate}/${category}`);
-    const files = fs.readdirSync(categoryPath);
-    if (files.length > 0) {
-      const randomFile = files[Math.floor(Math.random() * files.length)];
-      const filePath = path.join(categoryPath, randomFile);
-      const section = getRandomSection(filePath);
-      combinedHtmlblog += section;
-    }
-  }
-
-  combinedHtmlblog += bottomHtml;
-
-  return combinedHtmlblog;
-}
-
-
 //
 
 // Function to generate text content using OpenAI GPT-4
@@ -2639,615 +2162,105 @@ async function transliterateAndSlugifyLatinArabic(title) {
 }
 
 
-async function processSitesFromSQS(webhook, track_id, site_type, site_theme, site_language, contact_country, file_extension, site_count, rename_index, edit_after_generation, key_words, stop_words, domain_name) {
-
-  console.log('domain_name: ', domain_name)
-
-  sendToClientWithUserId(track_id, 'Генерируем Вайтпейдж...');
- 
-
-  function getLangAttr(site_language) {
-    const languageCodes = {
-      'Английский': 'en',
-      'Испанский': 'es',
-      'Французский': 'fr',
-      'Немецкий': 'de',
-      'Итальянский': 'it',
-      'Португальский': 'pt',
-      'Нидерландский': 'nl',
-      'Русский': 'ru',
-      'Японский': 'ja',
-      'Корейский': 'ko',
-      'Арабский': 'ar',
-      'Бенгальский': 'bn',
-      'Хинди': 'hi',
-      'Индонезийский': 'id',
-      'Малайский': 'ms',
-      'Турецкий': 'tr',
-      'Вьетнамский': 'vi',
-      'Тайский': 'th',
-      'Филиппинский': 'tl',
-      'Иврит': 'he',
-      'Польский': 'pl',
-      'Украинский': 'uk',
-      'Чешский': 'cs',
-      'Шведский': 'sv',
-      'Норвежский': 'no',
-      'Датский': 'da',
-      'Финский': 'fi',
-      'Греческий': 'el',
-      'Венгерский': 'hu',
-      'Румынский': 'ro',
-      'Словацкий': 'sk',
-      'Литовский': 'lt',
-      'Латвийский': 'lv',
-      'Эстонский': 'et',
-      'Сербский': 'sr',
-      'Хорватский': 'hr',
-      'Болгарский': 'bg',
-      'Исландский': 'is',
-      'Македонский': 'mk',
-      'Словенский': 'sl',
-      'Мальтийский': 'mt',
-      'Грузинский': 'ka',
-      'Армянский': 'hy',
-      'Азербайджанский': 'az',
-      'Албанский': 'sq',
-      'Узбекский': 'uz',
-      'Белорусский': 'be',
-      'Казахский': 'kk'
-    };
-
-    return languageCodes[site_language] || 'en'; // По умолчанию возвращает 'en', если язык не найден
-  }
-
- 
-
-  console.log('processSitesFromSQS: Processing message for:', track_id);
-  console.log('Inputs:', { webhook, track_id, site_type, site_theme, site_language, contact_country, file_extension, site_count, rename_index, edit_after_generation, key_words, stop_words, domain_name });
-  
- sendToClientWithUserId(track_id, 'Старт Вайтпейдж...');
-
-
- let newIndex = '';
-
-  newIndex = rename_index;
-
-  let key_words_new = '';
-  let stop_words_new = '';
-
-  try {
-    if (!key_words || key_words === '' ) {
-      //throw new Error("No keywords provided for Unsplash search");
-      if (stop_words != ''){
-        stop_words_new = `Do not use any of "stop words" in any transcript and any combination, "stop words": ${stop_words}`
-        //console.log('stop_words_new: ', stop_words_new)
-        key_words_new = await jsonResponseMainKeyWords(site_theme, stop_words_new);
-        key_words = key_words_new.key_words;
-
-      }
-      else{
-        stop_words_new = `Do not use any harmful, illegal, unethical, or violent content stop words of any kind in generating key words`
-       // console.log('stop_words_new: ', stop_words_new)
-        key_words_new = await jsonResponseMainKeyWords(site_theme, stop_words_new);
-        key_words = key_words_new.key_words;
-      }
-     
-
-    }
-    else {
-      if (stop_words != '') {
-        stop_words_new = `Do not use any of stop words: ${stop_words}`
-       // console.log('stop_words_new: ', stop_words_new)
-        key_words_new = await jsonResponseMainKeyWords(key_words, stop_words_new);
+async function processSitesFromSQS(webhook, track_id, site_type, site_theme, site_language, contact_country, file_extension, site_count, rename_index, edit_after_generation, key_words, stop_words, domain_name, site_style = 'minimalist') {
+    try {
+      sendToClientWithUserId(track_id, 'Генерируем Вайтпейдж...');
+      
+      // Валидация и подготовка ключевых слов
+      if (!key_words || key_words === '') {
+        const stop_words_directive = stop_words ? 
+          `Do not use any of "stop words": ${stop_words}` : 
+          `Do not use any harmful, illegal, unethical, or violent content`;
         
-
+        const keywordsResponse = await jsonResponseMainKeyWords(site_theme, stop_words_directive);
+        key_words = keywordsResponse.key_words;
       }
-      else {
-        stop_words_new = `Do not use any harmful, illegal, unethical, or violent content sopp words of any kind in generating key words`
-        console.log('stop_words_new: ', stop_words_new)
-        key_words_new = await jsonResponseMainKeyWords(key_words, stop_words_new);
-       
+      
+      // Обработка домена
+      let brandName = '';
+      if (domain_name && domain_name.trim() !== '') {
+        let processedDomainName = domain_name.trim();
+        if (processedDomainName.startsWith('www.')) {
+          processedDomainName = processedDomainName.substring(4);
+        }
+        const domainParts = processedDomainName.split('.');
+        if (domainParts.length > 0 && domainParts[0] !== '') {
+          brandName = domainParts[0];
+        }
       }
-    }
-
-    //sendToClientWithUserId(track_id, 'Начинаем Генерацию Вайтпейдж...');
-
-    let prompt = ''
-    prompt = `Generate unique text for ${site_theme} website in ${site_language} for ${contact_country}`;
-    const webhookUrl = `https://aisitegen.onrender.com/api/v1/generatorTelegram/webhook/?user_id=${encodeURIComponent(track_id)}`;
-
-    console.log('Loading... Start Generating Text for prompt:', prompt);
-    // sendToClientWithUserId(track_id,  'Загружаем' );
-
-    let domain_to_ai = ''; // Initialize as empty
-    
-
-
-    console.log('Получен domain_name:', domain_name);
-
-  // Проверяем и обрабатываем domain_name корректно
-  let processedDomainName = domain_name.trim();
-
-  // Убираем 'www.' если присутствует
-  if (processedDomainName.startsWith('www.')) {
-    processedDomainName = processedDomainName.substring(4);
-  }
-
-  const domainParts = processedDomainName.split('.');
-  let brandName = '';
-
-  if (domainParts.length > 0 && domainParts[0] !== '') {
-    brandName = domainParts[0];
-}  else {
-    brandName = '';
-  }
-
-  let domain_to_policy = processedDomainName;
-
-   // let brandName = domain_name.replace(/^(?:https?:\/\/)?(?:www\.)?(?:[^.]+\.)*([^.]+)\.[^.]+(?:\/.*)?$/, '$1');
-    console.log('brandName', brandName)
-
-    if (domain_name === '') {
-      domain_to_ai = `- ** Brand Name **: generate a one word brand name on ${site_language} language for the business that aligns with the ${site_theme} and response as "brand_name".`;
-      domain_name = `- ** Brand Name **: generate a one word domain brand name on ${site_language} language for the business that aligns with the ${site_theme} and response as "brand_name".`;
-    } else {
-
-      domain_to_ai = `- ** Brand Name **: Use brand name as it is and do not translate to ${site_language}, domain name: " ${brandName} ", do not change it and use in website text as ${brandName} and response as: "brand_name".`;
-    }
-
-    console.log('domain_name ', domain_name )
-
-    let stop_words_ai = ''; // Initialize as empty
-
-    if (stop_words === '') {
-      stop_words_ai = '';
-
-    } else {
-      stop_words_ai = `- ** Stop Words **: Do not use in text generation any of this stop words: ${stop_words} ".`;
-    }
-
-    let jsonResponse = ''
-
-    sendToClientWithUserId(track_id, '🏢 Генерируем Текст Главной Страницы...');
-    jsonResponse = await generateTextFromGPT4o(site_type, site_theme, site_language, contact_country, key_words, domain_to_ai, brandName, stop_words_ai, track_id);
-
-    let thankyouResponse = '';
-     thankyouResponse = await translatedThankYouFromGPT4o(site_language);
-
-   // console.log('thankyouResponse:', thankyouResponse);
-
-    let thankyou = thankyouResponse.thank_you;
-    let thankyoutext = thankyouResponse.thank_you_text;
-
-    let promptImages = '';
-
-    promptImages = jsonResponse.images_key_word; //translated to EN keywords
-
-    //  promptImages = site_theme;
-
-    let blogTitlesJsonResponse = '';
-
-    let blog_context = '';
-
-    blog_context = jsonResponse.service_text_01;
-
-    let product_context = '';
-
-    product_context = jsonResponse.product;
-
-    let keywords_generated_ai = '';
-
-    keywords_generated_ai = jsonResponse.keywords_head;
-
-    let promptGeneratedResponse = '';
-    let promptGeneratedResponse2 = '';
-    let promptGeneratedResponse3 = '';
-    let promptGeneratedResponseProduct = '';
-
-
-
-    blogTitlesJsonResponse = await generateBlogTitlesFromGPT4o(blog_context, product_context, site_type, site_theme, site_language, keywords_generated_ai, stop_words_ai)
-
-   
-
-    let promptBlogTitle1 = '';
-    let promptBlogShortText1 = '';
-    let promptBlogTitle2 = '';
-    let promptBlogShortText2 = '';
-    let promptBlogTitle3 = '';
-    let promptBlogShortText3 = '';
-    let promptImages2 = '';
-    let promptImages3 = '';
-
-    promptBlogTitle1 = blogTitlesJsonResponse.blog_title_001;
-    promptBlogShortText1 = blogTitlesJsonResponse.blog_text_001;
-    promptBlogTitle2 = blogTitlesJsonResponse.blog_title_002;
-    promptBlogShortText2 = blogTitlesJsonResponse.blog_text_002;
-    promptBlogTitle3 = blogTitlesJsonResponse.blog_title_003;
-    promptBlogShortText3 = blogTitlesJsonResponse.blog_text_003;
-
-
-
-    let promptImagesContext = '';
-    let promptImagesContext2 = '';
-    let promptImagesContext3 = '';
-    let promptImagesProduct = '';
-
-     promptImagesContext = promptBlogShortText1;
-     promptImagesContext2 = promptBlogShortText2;
-     promptImagesContext3 = promptBlogShortText3;
-
-    promptGeneratedResponseProduct = await generatePromptsFromGPT4oMain( product_context, site_theme, keywords_generated_ai);
-    promptGeneratedResponse = await generatePromptsFromGPT4o(promptImagesContext, product_context, site_theme, keywords_generated_ai, promptBlogTitle1);
-    promptGeneratedResponse2 = await generatePromptsFromGPT4o2(promptImagesContext2, product_context, site_theme, keywords_generated_ai, promptBlogTitle2);
-    promptGeneratedResponse3 = await generatePromptsFromGPT4o3(promptImagesContext3, product_context, site_theme, keywords_generated_ai, promptBlogTitle3);
-
-    promptImages = promptGeneratedResponse.prompt_1
-    promptImages2 = promptGeneratedResponse2.prompt_2
-    promptImages3 = promptGeneratedResponse3.prompt_3
-    promptImagesProduct = promptGeneratedResponseProduct.prompt
-
-   // console.log('Blog Titles and Short Texts:', { promptBlogTitle1, promptBlogShortText1, promptBlogTitle2, promptBlogShortText2, promptBlogTitle3, promptBlogShortText3 });
-
-    let slug1TR = '';
-    let slug2TR = '';
-    let slug3TR = '';
-
-    slug1TR = await transliterateAndSlugify(promptBlogTitle1);
-    slug2TR = await transliterateAndSlugify(promptBlogTitle2);
-    slug3TR = await transliterateAndSlugify(promptBlogTitle3);
-
-    let slug1 = '';
-    let slug2 = '';
-    let slug3 = '';
-
-    slug1 = await transliterateAndSlugifyLatinArabic(slug1TR)
-    slug2 = await transliterateAndSlugifyLatinArabic(slug2TR)
-    slug3 = await transliterateAndSlugifyLatinArabic(slug3TR)
-
-   // console.log("blog_slug_001: ", slug1);
-   // console.log("url11: ", slug1);
-
-   // console.log('Generated Slugs:', { slug1, slug2, slug3 });
-
-    let promptImagesAi = '';
-
-    promptImagesAi = keywords_generated_ai;
-    //promptImagesAi = key_words;
-
-    // // keywords_generated_ai
-
-    const promptAddon = ', photography, hyper-realistic, detailed 8k, ultra-detailed, masterpiece, best quality, dslr, ultra quality, sharp focus, tack sharp, dof, film grain, Fujifilm XT3, crystal clear, 8K UHD'
-
-    let newImagePrompt = '';
-    let newImagePrompt2 = '';
-    let newImagePrompt3 = '';
-    let newImagePromptProduct = '';
-
-
-    newImagePrompt = promptImages + promptAddon
-    newImagePrompt2 = promptImages2 + promptAddon
-    newImagePrompt3 = promptImages3 + promptAddon
-    newImagePromptProduct = promptImagesProduct + promptAddon;
-
-    sendToClientWithUserId(track_id, '🖼️ Генерируем Изображения для Главной Страницы...');
-
-    const imagesAiResponse = await replicateResponse(newImagePrompt);
-    const imagesAiResponse2 = await replicateResponse(newImagePrompt2);
-    const imagesAiResponse3 = await replicateResponse(newImagePrompt3);
-    const imagesAiResponseProduct = await replicateResponse(newImagePromptProduct);
-
-
-   // console.log("imagesAiResponse: ", imagesAiResponse)
-
-
-    sendToClientWithUserId(track_id, '📝 Генерируем Блог: Cтраница 1.');
-
-    const jsonResponseBlog = await generateTextBlogFromGPT4o(site_type, site_theme, site_language, contact_country, key_words, promptBlogTitle1, promptBlogShortText1);
-
-    sendToClientWithUserId(track_id, '📝 Генерируем Блог: Cтраница 2.');
-   // console.log('Generated Slugs:', 'Generating text for blog page 2.');
-
-    const jsonResponseBlog2 = await generateTextBlog2FromGPT4o(site_type, site_theme, site_language, contact_country, key_words, promptBlogTitle2, promptBlogShortText2);
-
-    sendToClientWithUserId(track_id, '📝 Генерируем Блог: Cтраница 3.');
-    const jsonResponseBlog3 = await generateTextBlog3FromGPT4o(site_type, site_theme, site_language, contact_country, key_words, promptBlogTitle3, promptBlogShortText3);
-
-    // sendToClientWithUserId(track_id, { status: 'translate_images_key_words', message: 'Translation...' });
-    const usplash_key_words = await translatedTextFromGPT4o(promptImages, site_language);
-
-   // console.log('images_key_word:', usplash_key_words);
-
-    // sendToClientWithUserId(track_id, { status: 'images_key_words', message: 'Final Key Words:' + usplash_key_words });
-    sendToClientWithUserId(track_id, '🖼️ Подбираем подходящие изображения');
-
-    //const imageUrls = await fetchImagesFromUnsplash(promptImages, 8);
-    const imageUrls = await fetchImagesFromPexels(promptImages, 8);
-
-    async function fetchImagesRandomly(promptImages, numImages = 8) {
-      // Randomly select a function to call (either Unsplash or Pexels)
-      const randomChoice = Math.random() < 0.5 ? 'unsplash' : 'pexels';
-    //  console.log(`Randomly selected ${randomChoice} API`);
-
-      if (randomChoice === 'unsplash') {
-        return await fetchImagesFromUnsplash(promptImages, numImages);
-      } else {
-        return await fetchImagesFromPexels(promptImages, numImages);
-      }
-    }
-
-    // Usage example
-    // const imageUrls = await fetchImagesRandomly(promptImages, 8);
-
-
-
-    //  const imageUrls = imagesAiResponse;
-
-
-    const imageVariables = {};
-    imageUrls.forEach((url, index) => {
-      if (url) {
-        const placeholder = `image_00${index + 1}`;
-        imageVariables[placeholder] = url;
-       // console.log(`Image URL set for ${placeholder}: ${url}`);
-      } else {
-        console.log(`No image URL found for image_00${index + 1}`);
-      }
-    });
-
-    sendToClientWithUserId(track_id, '🗂️ Генерируем внутренние ссылки.');
-   // console.log('Fetched images:', imageVariables);
-
-    const teamImages = await fetchTeamMemberImages();
-
-   // console.log('Fetched team member images:', teamImages);
-
-    let fullResponse = '';
-    let brandnamepolicy = '';
-    brandnamepolicy = domain_to_policy;
-    let fullResponseThankyou = '';
-
-
-    const lang_attr = getLangAttr(site_language);
-
-    fullResponse = {
-      ...jsonResponse,
-      ...imageVariables,
-      ...teamImages,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_title_001: promptBlogTitle1,
-      blog_text_001: promptBlogShortText1,
-      blog_title_002: promptBlogTitle2,
-      blog_text_002: promptBlogShortText2,
-      blog_title_003: promptBlogTitle3,
-      blog_text_003: promptBlogShortText3,
-      brand_name_policy: brandnamepolicy,
-      lang_attr: lang_attr
-    };
-
-     fullResponseThankyou = { 
-      ...jsonResponse,
-      ...thankyouResponse,
-       lang_attr: lang_attr
-     //  thank_you: thankyou,
-     //  thank_you_text: thankyoutext
-    }
-   
-    //console.log('fullResponseThankyou: ', fullResponseThankyou)
-
-    const fullResponseBlog = {
-      ...jsonResponse, ...jsonResponseBlog, ...imageVariables,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_title_001: promptBlogTitle1,
-      blog_text_001: promptBlogShortText1,
-      blog_title_002: promptBlogTitle2,
-      blog_text_002: promptBlogShortText2,
-      blog_title_003: promptBlogTitle3,
-      blog_text_003: promptBlogShortText3,
-      lang_attr: lang_attr
-    };
-    const fullResponseBlog2 = {
-      ...jsonResponse, ...jsonResponseBlog2, ...imageVariables,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2, blog_slug_003: slug3, blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_title_001: promptBlogTitle1,
-      blog_text_001: promptBlogShortText1,
-      blog_title_002: promptBlogTitle2,
-      blog_text_002: promptBlogShortText2,
-      blog_title_003: promptBlogTitle3,
-      blog_text_003: promptBlogShortText3,
-      lang_attr: lang_attr
-    };
-    const fullResponseBlog3 = {
-      ...jsonResponse, ...jsonResponseBlog3, ...imageVariables,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_slug_001: slug1,
-      blog_slug_002: slug2,
-      blog_slug_003: slug3,
-      blog_title_001: promptBlogTitle1,
-      blog_text_001: promptBlogShortText1,
-      blog_title_002: promptBlogTitle2,
-      blog_text_002: promptBlogShortText2,
-      blog_title_003: promptBlogTitle3,
-      blog_text_003: promptBlogShortText3,
-      lang_attr: lang_attr
-    };
-
-    sendToClientWithUserId(track_id, '🛠️ Создаем навигацию и ссылки');
-
-
-    let randomTemplate = '';
-    let randomTemplateAssets = '';
-
-    // Function to randomly return "blocks", "blocks2", or "blocks3"
-    function getRandomTemplateName() {
-      const randomValue = Math.random();
-      if (randomValue < 0.33) {
-        return 'blocks3';
-      } else if (randomValue < 0.66) {
-        return 'blocks2';
-      } else {
-        return 'blocks';
-      }
-    }
-
-    // Use the function to set the randomTemplate variable
-  randomTemplate = getRandomTemplateName();
- // randomTemplate = 'blocks2'
-
-    if (randomTemplate === 'blocks') {
-      randomTemplateAssets = '001';
-    } else if (randomTemplate === 'blocks2') {
-      randomTemplateAssets = '002';
-    } else {
-      randomTemplateAssets = '003';
-    }
-
-
-     // Function to randomly return "blocks", "blocks2", or "blocks3"
-   //  function getRandomTemplateName() {
-    //  const randomValue = Math.random();
-   //   if (randomValue < 0.25) {
-    //    return 'blocks3';
-    //  } else if (randomValue < 0.50) {
-    //    return 'blocks2';
-    //  } else if (randomValue < 0.75){
-    //    return 'blocks4';
-    //  }
-   //  else {
-   //   return 'blocks';
-  //  }
-   // }
-
-    // Use the function to set the randomTemplate variable
-  //randomTemplate = getRandomTemplateName();
-  //randomTemplate = 'blocks4'
-
-      // if (randomTemplate === 'blocks') {
-      //    randomTemplateAssets = '001';
-      // } else if (randomTemplate === 'blocks2') {
-      //   randomTemplateAssets = '002';
-      // } else if (randomTemplate === 'block3') {
-      //    randomTemplateAssets = '003';
-       // } else {
-       //     randomTemplateAssets = '004';
-       //  }
-
-
-    let extension = file_extension;
-    let zipFilePath;
-
-    const combinedHTML = buildHtmlTemplate(randomTemplate, track_id);
-    const combinedHTMLservices = buildHtmlTemplatServices(randomTemplate, track_id);
-    const combinedHTMLabout = buildHtmlTemplatAbout(randomTemplate, track_id);
-    const combinedHTMLproduct = buildHtmlTemplateProduct(randomTemplate, track_id);
-    const combinedHTMLblog = await buildHtmlTemplateBlog(randomTemplate, track_id);
-    const combinedHTMLblog2 = await buildHtmlTemplateBlog2(randomTemplate, track_id);
-    const combinedHTMLblog3 = await buildHtmlTemplateBlog3(randomTemplate, track_id);
-    const combinedHTMLpolicy = await buildHtmlTemplatePolicy(site_language, randomTemplate, track_id);
-    const combinedPHP = await buildPhpTemplate(randomTemplate, track_id);
-
-    
-    const combinedPHPblog = await buildPHPTemplateBlog(randomTemplate, track_id);
-    const combinedPHPblog2 = await buildPHPTemplateBlog2(randomTemplate, track_id);
-    const combinedPHPblog3 = await buildPHPTemplateBlog3(randomTemplate, track_id);
-
-    const generatedPHPblog = await generateHTML(combinedPHPblog, fullResponseBlog);
-    const generatedPHPblog2 = await generateHTML(combinedPHPblog2, fullResponseBlog2);
-    const generatedPHPblog3 = await generateHTML(combinedPHPblog3, fullResponseBlog3);
-
-    const combinedPHPservices = buildHtmlTemplatServicesPHP(randomTemplate, track_id);
-    const combinedPHPabout = buildHtmlTemplatAboutPHP(randomTemplate, track_id);
-    const combinedPHPproduct = buildHtmlTemplateProductPHP(randomTemplate, track_id);
-    const combinedHTMLpolicyPHP = await buildHtmlTemplatePolicyPHP(site_language, randomTemplate, track_id);
-    
-
-    const generatedHTML = await generateHTML(combinedHTML, fullResponse);
-    const generatedPHP = await generateHTML(combinedPHP, fullResponse);
-
-    
-   
-
-    const generatedHTMLservices = await generateHTML(combinedHTMLservices, fullResponse);
-    const generatedHTMLabout = await generateHTML(combinedHTMLabout, fullResponse);
-    const generatedHTMLproduct = await generateHTML(combinedHTMLproduct, fullResponse);
-
-    const generatedPHPservices = await generateHTML(combinedPHPservices, fullResponse);
-    const generatedPHPLabout = await generateHTML(combinedPHPabout, fullResponse);
-    const generatedPHPproduct = await generateHTML(combinedPHPproduct, fullResponse);
-    const generatedHTMLpolicy = await generateHTML(combinedHTMLpolicy, fullResponse);
-
-    const generatedPHPpolicy = await generateHTML(combinedHTMLpolicyPHP, fullResponse);
-    const generatedHTMLblog = await generateHTML(combinedHTMLblog, fullResponseBlog);
-    const generatedHTMLblog2 = await generateHTML(combinedHTMLblog2, fullResponseBlog2);
-    const generatedHTMLblog3 = await generateHTML(combinedHTMLblog3, fullResponseBlog3);
-
-    if (extension === 'PHP') {
-
-     
-      const combinedHTMLthankyouPHP = await buildHtmlTemplateThankyouPHP(randomTemplate, track_id);
-
-      const generatedHTMLthankyouPHP = await generateHTML(combinedHTMLthankyouPHP, fullResponseThankyou);
-
- 
-
-      sendToClientWithUserId(track_id, '📦 Создаем ZIP Архив');
-      zipFilePath = await savePhpToZip(newIndex, generatedPHP, generatedPHPservices, generatedPHPLabout, generatedPHPproduct, generatedPHPpolicy, generatedPHPblog, generatedPHPblog2, generatedPHPblog3, slug1, slug2, slug3, track_id, imagesAiResponse, imagesAiResponse2, imagesAiResponse3, imagesAiResponseProduct, randomTemplateAssets, generatedHTMLthankyouPHP);
-
-    }
-
-    else {
-      const combinedHTMLthankyou = await buildHtmlTemplateThankyou(randomTemplate, track_id);
-      const generatedHTMLthankyou = await generateHTML(combinedHTMLthankyou, fullResponseThankyou);
-     sendToClientWithUserId(track_id, '📦 Создаем ZIP Архив');
-    
-
-      zipFilePath = await saveHtmlToZip(newIndex, generatedHTML, generatedHTMLservices, generatedHTMLabout, generatedHTMLproduct, generatedHTMLpolicy, generatedHTMLblog, generatedHTMLblog2, generatedHTMLblog3, slug1, slug2, slug3, track_id, imagesAiResponse, imagesAiResponse2, imagesAiResponse3, imagesAiResponseProduct, randomTemplateAssets, generatedHTMLthankyou);
-
-    }
-
-
-
-    // Function to generate a random 15-digit number
-    function generateRandom15DigitNumber() {
-      return Math.floor(Math.random() * 10 ** 15).toString().padStart(15, '0');
-    }
-
-    let randomNumber = '';
-    randomNumber = generateRandom15DigitNumber();
-   // console.log("randomNumber:", randomNumber)
-
-    const s3BucketName = process.env.AWS_S3_BUCKET_NAME;
-    const s3Key = `${track_id}_${randomNumber}.zip`;
- 
-      const s3Url = await uploadToS3(zipFilePath, s3BucketName, s3Key);
-   
+      
+      // Создание конфигурации сайта
+      const siteConfig = {
+        track_id,
+        site_type,
+        site_theme,
+        site_language,
+        contact_country,
+        file_extension,
+        rename_index,
+        key_words,
+        stop_words,
+        domain_name: brandName,
+        site_style
+      };
+      
+      // Генерация промпта для LLM
+      const prompt = generatePromptsForHTMLGeneration(site_style, siteConfig);
+      
+      // Системный промпт для LLM
+      const systemPrompt = `
+  You are an expert web developer and designer specializing in ${site_style} websites.
+  Create a complete website in HTML and CSS (embedded in <style> tags).
+  The HTML should be valid, responsive, and follow modern web standards.
+  Structure your response to clearly separate different pages with comments like:
+  <!-- PAGE: index.html -->
+  <!-- PAGE: about.html -->
+  <!-- PAGE: services.html -->
+  etc.
   
-
-    const status = 'succeeded';
-
-    await sendToWebhook(webhookUrl, { track_id, s3Url, webhookUrl, status });
-
-  //  console.log('API Request Successful');
-  } catch (error) {
-    console.error('Error processing site:', error);
-    sendToClientWithUserId(track_id, { status: 'processing_failed' });
+  Pay special attention to:
+  1. Creating human-like content that doesn't appear AI-generated
+  2. Incorporating the keywords naturally for SEO
+  3. Making the design responsive for all devices
+  4. Ensuring all links between pages work correctly
+  5. Including appropriate images placeholders with descriptive alt text
+  `;
+      
+      sendToClientWithUserId(track_id, '🖋️ Генерируем контент сайта через AI...');
+      
+      // Генерация HTML через LLM
+      const llmResponse = await generateTextWithLLM({
+        prompt,
+        systemPrompt
+      });
+      
+      // Обработка ответа LLM и создание сайта
+      const result = await processLLMResponse(llmResponse, siteConfig);
+      
+      if (result.status === 'error') {
+        throw new Error(result.message);
+      }
+      
+      // Загрузка ZIP-файла в S3
+      const s3BucketName = process.env.AWS_S3_BUCKET_NAME;
+      const randomNumber = generateRandom15DigitNumber();
+      const s3Key = `${track_id}_${randomNumber}.zip`;
+      
+      sendToClientWithUserId(track_id, '📤 Загружаем готовый сайт...');
+      const s3Url = await uploadToS3(result.zipPath, s3BucketName, s3Key);
+      
+      // Отправка уведомления
+      const webhookUrl = `https://aisitegen.onrender.com/api/v1/generatorTelegram/webhook/?user_id=${encodeURIComponent(track_id)}`;
+      await sendToWebhook(webhookUrl, { track_id, s3Url, webhookUrl, status: 'succeeded' });
+      
+      sendToClientWithUserId(track_id, '✅ Вайтпейдж успешно создан!');
+      
+    } catch (error) {
+      console.error('Error processing site:', error);
+      sendToClientWithUserId(track_id, { status: 'processing_failed', message: error.message });
+    }
   }
-}
-
-
+  
 export { sendToClientWithUserId, processSitesFromSQS, addClient, removeClient };
 
 // Добавляем новую функцию для генерации сайта с использованием LLM
