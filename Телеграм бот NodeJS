@@ -857,6 +857,38 @@ bot.on('callback_query', async (callbackQuery) => {
     }
 });
 
+// Пример функции-обработчика для выбора стиля сайта
+bot.action(/style_(.+)/, async (ctx) => {
+    const style = ctx.match[1];
+    ctx.session.site_style = style;
+    
+    await ctx.editMessageText(
+      `Выбран стиль сайта: ${getStyleNameRu(style)}\n\nВыберите формат файлов:`,
+      {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'HTML', callback_data: 'format_html' }, { text: 'PHP', callback_data: 'format_php' }]
+          ]
+        }
+      }
+    );
+  });
+  
+  // Функция для получения названия стиля на русском языке
+  function getStyleNameRu(style) {
+    const styles = {
+      minimalist: 'Минималистичный',
+      corporate: 'Корпоративный',
+      creative: 'Креативный',
+      ecommerce: 'Интернет-магазин',
+      gaming: 'Игровой',
+      luxury: 'Премиальный',
+      news: 'Новостной'
+    };
+    
+    return styles[style] || 'Стандартный';
+  }
 
 // Поддержка
 const supportLink = 'https://t.me/SPY_AGENCY'
